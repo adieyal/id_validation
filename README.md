@@ -15,6 +15,6 @@ Currenty only Zimbabwe is implemented but more countries will be added over time
     # The extract data method returns any data that might be encoded into the id number. This is country specific.
     data = validator.extract_data("50-025544-Q-12")
     assert data["registration_region"] == "Mutasa"
-    assert data["distict"] == "Chivi"
+    assert data["district"] == "Chivi"
     assert data["sequence_number"] == "025544"
 ```
