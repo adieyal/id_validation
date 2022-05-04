@@ -1,4 +1,4 @@
-from validate import ValidationError
+from .validate import ValidationError
 """
 Source: Zimbabwe 2018 Elections Biometric Voters' Roll Analysis
 https://www.slideshare.net/povonews/zimbabwe-2018-biometric-voters-roll-analysis-pachedu
@@ -79,10 +79,10 @@ class ZimbabweValidator:
 
     def _checksum(self, id_number: str) -> bool:
         """
-        Validates the checksum digit of the given id number
+        Validates the checksum digit of the given id number using mod 23
         """
-        _, _, check_letter, _ = self._extract_parts(id_number)
-        check_number = int(id_number[0:-3])
+        registration_code, sequence_number, check_letter, _ = self._extract_parts(id_number)
+        check_number = int(registration_code + sequence_number)
         mod = check_number % 23
         lookup = {
             1: "A", 2: "B", 3: "C", 4: "D",
@@ -93,8 +93,7 @@ class ZimbabweValidator:
             21: "X", 22: "Y", 23: "Z",
         }
 
-        check_letter = lookup[mod]
-        return check_letter == check_letter
+        return check_letter == lookup[mod]
 
     def _clean_id_number(self, id_number: str) -> str:
         return id_number.replace("-", "").replace(" ", "")
@@ -132,7 +131,10 @@ class ZimbabweValidator:
         registration_code, sequence_number, _, district_code = self._extract_parts(cleaned_id_number)
 
         return {
-            "registration_code": self._get_region(registration_code),
-            "district_code": self._get_region(district_code),
+            "registration_region": self._get_region(registration_code),
+            "district": self._get_region(district_code),
             "sequence_number": sequence_number
         }
+
+
+
