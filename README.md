@@ -27,5 +27,52 @@ The following codes are available:
     ZA_OLD - South African (Apartheid-era). See the note below for more information
     ZW - Zimbabwe
 
-## South Africa (Apartheid-era)
+## South Africa (ZA)
+South African ids contain the following information:
+- Date of birth
+- Gender
+- Citizenship (citizen or permanent resident)
+
+```
+>>> import id_validation
+>>> from id_validation import ValidatorFactory
+>>> validator = ValidatorFactory.get_validator("ZA")
+>>> validator.validate("7106245929185")
+True
+>>> validator.extract_data("7106245929185")
+{'dob': datetime.datetime(1971, 6, 24, 0, 0), 'gender': <GENDER.MALE: 1>, 'checksum': 5, 'citizenship': <CITIZENSHIP_TYPE.PERMANENT_RESIDENT: 1>}
+```
+
+## South Africa - Apartheid-era (ZA_OLD)
+Apartheid-era South African ids contain the following information:
+- Date of birth
+- Gender
+- Race
+
+```
+>>> import id_validation
+>>> from id_validation import ValidatorFactory
+>>> validator = ValidatorFactory.get_validator("ZA_OLD")
+>>> validator.validate("7106245929185")
+True
+>>> validator.extract_data("7106245929185")
+{'dob': datetime.datetime(1971, 6, 24, 0, 0), 'gender': <GENDER.MALE: 1>, 'checksum': 5, 'race': <RACE.CAPE_COLOURED: 1>}
+```
+
+### Note
 These id numbers were used during the Apartheid-era. They encoded the race of the ID holder. The 1986 Identification Act removed this identifier and all id numbers were changed to the more modern version which only encodes citizenship. This validator is included for completeness. I have never seen an old id number in any dataset I have ever worked with, so avoid using it unless you are sure that your ids are pre-1986. More information can be found [here](https://web.archive.org/web/20220705233321/https://www.thoughtco.com/south-african-apartheid-era-identity-numbers-4070233)
+
+## Zimbabwe (ZW)
+Zimbabwe IDs contain the following information:
+- Registration region
+- Father's district
+
+```
+>>> import id_validation
+>>> from id_validation import ValidatorFactory
+>>> validator = ValidatorFactory.get_validator("ZW")
+>>> validator.validate("50-025544-Q-12")
+True
+>>> validator.extract_data("50-025544-Q-12")
+{'registration_region': 'Mutasa', 'district': 'Chivi', 'sequence_number': '025544'}
+```
