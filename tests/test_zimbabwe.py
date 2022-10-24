@@ -1,6 +1,6 @@
 import pytest
 
-from .validate_zimbabwe import ZimbabweValidator, region_lookup
+from ..validate_zimbabwe import ZimbabweValidator, region_lookup
 
 @pytest.fixture
 def valid_id_numbers():

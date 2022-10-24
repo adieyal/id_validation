@@ -1,4 +1,5 @@
 from .validate import ValidationError
+
 """
 Source: Zimbabwe 2018 Elections Biometric Voters' Roll Analysis
 https://www.slideshare.net/povonews/zimbabwe-2018-biometric-voters-roll-analysis-pachedu
