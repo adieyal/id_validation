@@ -2,6 +2,10 @@ A library for validating national id numbers and extracting any embedded data fr
 
 Currenty only South Africa and Zimbabwe are implemented but more countries will be added over time
 
+# Installation
+
+    pip install id-validation
+    
 # Usage
 
 ```

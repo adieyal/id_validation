@@ -1,3 +1,5 @@
 0.1 Initial Commit
 0.2 Added South African and Apartheid-era South African Ids
 0.3 Changed license to MIT
+0.3.1 Removed unneeded requirements
+0.3.2 Added __all__ to __init__.py

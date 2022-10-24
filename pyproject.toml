@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "id-validator"
+version = "0.3.2"
+description = "A library to validate and extract information from national id numbers"
+readme = "README.md"
+authors = [{ name = "Adi Eyal", email = "adi@clearforest.io" }]
+license = { file = "LICENCE" }
+classifiers = [
+    "Licence :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+keywords = ["id numbers", "validation"]
+requires-python = ">=3.9"
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.urls]
+Homepage = "https://github.com/adieyal/id_validation/"
