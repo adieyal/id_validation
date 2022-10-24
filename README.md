@@ -8,7 +8,6 @@ Currenty only South Africa and Zimbabwe are implemented but more countries will 
     
 # Usage
 
-```
     from id_validation import ValidatorFactory
     validator = ValidatorFactory.get_validator("ZW")
 
@@ -20,7 +19,6 @@ Currenty only South Africa and Zimbabwe are implemented but more countries will 
     assert data["registration_region"] == "Mutasa"
     assert data["district"] == "Chivi"
     assert data["sequence_number"] == "025544"
-```
 
 # Countries
 The following codes are available:
