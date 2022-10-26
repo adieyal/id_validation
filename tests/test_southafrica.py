@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 import pytest
 
-from ..validate_southafrica import CITIZENSHIP_TYPE, GENDER, RACE, ApartheidSouthAfricaValidator, PostApartheidSouthAfricaValidator, SouthAfricaValidationError, SouthAfricaValidator
-from ..validate import ValidationError
+from id_validation.validate_southafrica import CITIZENSHIP_TYPE, GENDER, RACE, ApartheidSouthAfricaValidator, PostApartheidSouthAfricaValidator, SouthAfricaValidationError, SouthAfricaValidator
+from id_validation.validate import ValidationError
 
 idnumbers = list[str]
 

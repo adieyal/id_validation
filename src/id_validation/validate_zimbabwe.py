@@ -1,4 +1,5 @@
 from .validate import ValidationError
+import re
 
 """
 Source: Zimbabwe 2018 Elections Biometric Voters' Roll Analysis
@@ -69,6 +70,15 @@ region_lookup = {
 }
 
 class ZimbabweValidator:
+    _lookup = {
+        1: "A", 2: "B", 3: "C", 4: "D",
+        5: "E", 6: "F", 7: "G", 8: "H",
+        9: "J", 10: "K", 11: "L", 12: "M",
+        13: "N", 14: "P", 15: "Q", 16: "R",
+        17: "S", 18: "T", 19: "V", 20: "W",
+        21: "X", 22: "Y", 23: "Z",
+    }
+
     def _get_region(self, region_id: str) -> str:
         """
         Returns the region name for the given region id
@@ -85,19 +95,18 @@ class ZimbabweValidator:
         registration_code, sequence_number, check_letter, _ = self._extract_parts(id_number)
         check_number = int(registration_code + sequence_number)
         mod = check_number % 23
-        lookup = {
-            1: "A", 2: "B", 3: "C", 4: "D",
-            5: "E", 6: "F", 7: "G", 8: "H",
-            9: "J", 10: "K", 11: "L", 12: "M",
-            13: "N", 14: "P", 15: "Q", 16: "R",
-            17: "S", 18: "T", 19: "V", 20: "W",
-            21: "X", 22: "Y", 23: "Z",
-        }
 
-        return check_letter == lookup[mod]
+        return check_letter == ZimbabweValidator._lookup[mod]
 
     def _clean_id_number(self, id_number: str) -> str:
         return id_number.replace("-", "").replace(" ", "")
+
+    def _validate_str(self, id_number: str) -> str:
+        clean = self._clean_id_number(id_number)
+        allowed_letters = "".join(ZimbabweValidator._lookup.values())
+        re_validate = re.compile(r"^\d{2}\d{6,7}[{%s}]\d{2}$" % allowed_letters)
+
+        return re_validate.match(clean) is not None
 
     def _extract_parts(self, id_number: str) -> list[str]:
         registration_code = id_number[0:2]
@@ -113,6 +122,9 @@ class ZimbabweValidator:
         Verify the region codes as well as use the modulus 23 validation
         """
         cleaned_id_number = self._clean_id_number(id_number)
+        if not self._validate_str(cleaned_id_number):
+            return False
+
         registration_code, _, _, district_code = self._extract_parts(cleaned_id_number)
 
         try:

@@ -2,7 +2,7 @@ from .validate import Validator
 from .validate_zimbabwe import ZimbabweValidator
 from .validate_southafrica import PostApartheidSouthAfricaValidator, ApartheidSouthAfricaValidator
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 
 __all__ = ["ValidatorFactory"]
 
