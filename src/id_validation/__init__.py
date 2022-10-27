@@ -3,16 +3,18 @@ from .validate import Validator, ValidationError
 from .validate_zimbabwe import ZimbabweValidator
 from .validate_southafrica import PostApartheidSouthAfricaValidator, ApartheidSouthAfricaValidator
 from .validate_botswana import BotswanaValidator
+from .validate_nigeria import NigeriaValidator
 
-VERSION = "0.4.2"
+VERSION = "0.5.0"
 
 __all__ = ["ValidatorFactory"]
 
 validators = {
+    "BW": BotswanaValidator,
+    "NG": NigeriaValidator,
     "ZA": PostApartheidSouthAfricaValidator,
     "ZA_OLD": ApartheidSouthAfricaValidator,
     "ZW": ZimbabweValidator,
-    "BW": BotswanaValidator,
 }
 
 class ValidatorFactory:

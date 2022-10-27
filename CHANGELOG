@@ -7,3 +7,4 @@
 0.4.0 Added validator for Botswanan id numbers
 0.4.1 Improved validation for Zimbabwean id numbers
 0.4.2 Fixed South Africa apartheid id number validation
+0.5.0 Added validation for Nigerian ID numbers

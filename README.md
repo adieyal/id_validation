@@ -24,9 +24,35 @@ Currenty only South Africa and Zimbabwe are implemented but more countries will 
 The following codes are available:
 
     BW - Botswana
+    NG - Nigeria
     ZA - South Africa
     ZA_OLD - South African (Apartheid-era). See the note below for more information
     ZW - Zimbabwe
+
+
+## Botswana (BW)
+Note - the validation logic has been implemented from anecdotal information available online and not against official documentation.
+
+```
+>>> import id_validation
+>>> from id_validation import ValidatorFactory
+>>> validator = ValidatorFactory.get_validator("BW")
+>>> validator.validate("379219515")
+True
+>>> validator.extract_data("379219515")
+{'gender': 'Male'}
+```
+
+## Nigeria
+Nigerian id numbers consist of 11 randomly selected digits. Find the regulations <a href="images/MandatoryNIN_Gazetted.pdf">here</a>.
+
+```
+>>> import id_validation
+>>> from id_validation import ValidatorFactory
+>>> validator = ValidatorFactory.get_validator("NG")
+>>> validator.validate("35765421356")
+True
+```
 
 ## South Africa (ZA)
 South African ids contain the following information:
@@ -78,17 +104,4 @@ Zimbabwe IDs contain the following information:
 True
 >>> validator.extract_data("50-025544-Q-12")
 {'registration_region': 'Mutasa', 'district': 'Chivi', 'sequence_number': '025544'}
-```
-
-## BOTSWANA (BW)
-Note - the validation logic has been implemented from anecdotal information available online and not against official documentation.
-
-```
->>> import id_validation
->>> from id_validation import ValidatorFactory
->>> validator = ValidatorFactory.get_validator("BW")
->>> validator.validate("379219515")
-True
->>> validator.extract_data("379219515")
-{'gender': 'Male'}
 ```
