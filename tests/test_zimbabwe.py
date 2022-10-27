@@ -40,6 +40,16 @@ def invalid_id_numbers():
 def validator():
     return ZimbabweValidator()
 
+@pytest.fixture
+def invalid_region_idnumbers():
+    return [
+        "",
+        "sd",
+        "49-908555-S-00",
+        "00-908555-S-49",
+    ]
+
+
 class TestZimbabweValidator:
     def test_rejects_invalid_strings(self, validator, invalid_strings):
         for s in invalid_strings:
@@ -65,6 +75,10 @@ class TestZimbabweValidator:
                     raise AssertionError(f"Incorrectly accepted {registration_code}")
                 except Exception:
                     pass 
+
+    def test_rejects_invalid_region(self, validator, invalid_region_idnumbers):
+        for s in invalid_region_idnumbers:
+            assert not validator._validate_region(s)
 
     def test_checksum_with_valid_id_numbers(self, validator, valid_id_numbers):
         for id_number in valid_id_numbers:

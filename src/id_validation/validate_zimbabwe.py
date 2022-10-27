@@ -108,6 +108,11 @@ class ZimbabweValidator:
 
         return re_validate.match(clean) is not None
 
+    def _validate_region(self, id_number: str) -> str:
+        region1 = id_number[0:2]
+        region2 = id_number[-2:]
+        return region1 in region_lookup and region2 in region_lookup
+
     def _extract_parts(self, id_number: str) -> list[str]:
         registration_code = id_number[0:2]
         sequence_number = id_number[2:-3]
@@ -148,6 +153,3 @@ class ZimbabweValidator:
             "district": self._get_region(district_code),
             "sequence_number": sequence_number
         }
-
-
-

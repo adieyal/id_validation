@@ -5,8 +5,7 @@ from enum import Enum, auto
 import re
 from abc import ABC, abstractmethod
 from typing import Any
-
-from .validate import ValidationError
+from id_validation.validate import ValidationError
 
 class SouthAfricaValidationError(ValidationError):
     pass
