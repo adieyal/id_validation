@@ -23,6 +23,7 @@ Currenty only South Africa and Zimbabwe are implemented but more countries will 
 # Countries
 The following codes are available:
 
+    BW - Botswana
     ZA - South Africa
     ZA_OLD - South African (Apartheid-era). See the note below for more information
     ZW - Zimbabwe
