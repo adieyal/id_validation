@@ -76,3 +76,16 @@ True
 >>> validator.extract_data("50-025544-Q-12")
 {'registration_region': 'Mutasa', 'district': 'Chivi', 'sequence_number': '025544'}
 ```
+
+## BOTSWANA (BW)
+Note - the validation logic has been implemented from anecdotal information available online and not against official documentation.
+
+```
+>>> import id_validation
+>>> from id_validation import ValidatorFactory
+>>> validator = ValidatorFactory.get_validator("BW")
+>>> validator.validate("379219515")
+True
+>>> validator.extract_data("379219515")
+{'gender': 'Male'}
+```

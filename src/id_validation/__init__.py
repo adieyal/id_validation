@@ -1,6 +1,8 @@
-from .validate import Validator
+from id_validation.validate_botswana import BotswanaValidator
+from .validate import Validator, ValidationError
 from .validate_zimbabwe import ZimbabweValidator
 from .validate_southafrica import PostApartheidSouthAfricaValidator, ApartheidSouthAfricaValidator
+from .validate_botswana import BotswanaValidator
 
 VERSION = "0.3.4"
 
@@ -9,7 +11,8 @@ __all__ = ["ValidatorFactory"]
 validators = {
     "ZA": PostApartheidSouthAfricaValidator,
     "ZA_OLD": ApartheidSouthAfricaValidator,
-    "ZW": ZimbabweValidator
+    "ZW": ZimbabweValidator,
+    "BW": BotswanaValidator,
 }
 
 class ValidatorFactory:
