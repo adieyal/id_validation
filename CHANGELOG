@@ -5,3 +5,4 @@
 0.3.2 Added __all__ to __init__.py
 0.3.4 Fixed validation bug in ZimbabweValidator which did not correctly handle malformed strings
 0.4.0 Added validator for Botswanan id numbers
+0.4.1 Improved validation for Zimbabwean id numbers

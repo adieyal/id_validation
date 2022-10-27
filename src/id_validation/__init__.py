@@ -4,7 +4,7 @@ from .validate_zimbabwe import ZimbabweValidator
 from .validate_southafrica import PostApartheidSouthAfricaValidator, ApartheidSouthAfricaValidator
 from .validate_botswana import BotswanaValidator
 
-VERSION = "0.3.4"
+VERSION = "0.4.1"
 
 __all__ = ["ValidatorFactory"]
 
