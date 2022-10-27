@@ -1,5 +1,6 @@
 from datetime import datetime
 import random
+from enum import Enum
 from typing import Protocol
 from enum import Enum, auto
 import re
@@ -201,8 +202,11 @@ class PostApartheidSouthAfricaValidator(SouthAfricaValidator):
             
 
 class ApartheidSouthAfricaValidator(SouthAfricaValidator):
+    RACE_DIGIT = 11
+    CITIZENSHIP_DIGIT = 10
+
     def _validate_race(self, id_number: str) -> bool:
-        race = int(id_number[10])
+        race = int(id_number[ApartheidSouthAfricaValidator.RACE_DIGIT])
         
         return race in [
             RACE.WHITE.value,
@@ -215,6 +219,15 @@ class ApartheidSouthAfricaValidator(SouthAfricaValidator):
             RACE.OTHER_COLOURED.value,
             RACE.BLACK.value
         ]
+    
+    def _validate_citizenship(self, id_number: str) -> bool:
+        citizenship = int(id_number[ApartheidSouthAfricaValidator.CITIZENSHIP_DIGIT])
+        try:
+            CITIZENSHIP_TYPE(citizenship)
+        except ValueError:
+            return False
+
+        return True
 
     def validate(self, id_number: str) -> bool:
         if not super().validate(id_number):
@@ -229,15 +242,24 @@ class ApartheidSouthAfricaValidator(SouthAfricaValidator):
         if not self.validate(id_number):
             raise ValidationError("Invalid ID number")
 
-        race_digit = int(id_number[10])
+        race_digit = int(id_number[ApartheidSouthAfricaValidator.RACE_DIGIT])
         return RACE(race_digit)
+
+    def extract_citizenship(self, id_number: str) -> CITIZENSHIP_TYPE:
+        if not self.validate(id_number):
+            raise ValidationError("Invalid ID Number")
+
+        citizenship_digit = int(id_number[ApartheidSouthAfricaValidator.CITIZENSHIP_DIGIT])
+        return CITIZENSHIP_TYPE(citizenship_digit)
 
     def extract_data(self, id_number: str) -> dict[str, Any]:
         data = super().extract_data(id_number)
         data["race"] = self.extract_race(id_number)
+        data["citizenship"] = self.extract_citizenship(id_number)
+
         return data
 
-    def generate_idno(self, dob: datetime=None, gender: GENDER|None=None, race: RACE|None=None):
+    def generate_idno(self, dob: datetime=None, gender: GENDER|None=None, race: RACE|None=None, citizenship: CITIZENSHIP_TYPE|None=None):
         start_date = datetime(1900, 1, 1)
         end_date = datetime.now()
 
@@ -250,6 +272,9 @@ class ApartheidSouthAfricaValidator(SouthAfricaValidator):
         if race is None:
             race = random.choice(list(RACE))
 
+        if citizenship is None:
+            citizenship = random.choice(list(CITIZENSHIP_TYPE))
+
         if gender == GENDER.FEMALE:
             gender_digit = random.randint(0, 4)
         else:
@@ -257,7 +282,7 @@ class ApartheidSouthAfricaValidator(SouthAfricaValidator):
 
         sequence = "".join(str(i) for i in random.sample(range(10), 3))
 
-        idno = dob.strftime("%y%m%d") + str(gender_digit) + sequence + str(race.value) + random.choice("78")
+        idno = dob.strftime("%y%m%d") + str(gender_digit) + sequence + str(citizenship.value) + str(race.value)
         idno += str(self.generate_checksum(idno))
 
         return idno
