@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "id-validation"
-version = "0.4.1"
+version = "0.4.2"
 description = "A library to validate and extract information from national id numbers"
 readme = "README.md"
 authors = [{ name = "Adi Eyal", email = "adi@clearforest.io" }]
