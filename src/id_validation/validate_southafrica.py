@@ -1,19 +1,21 @@
-from datetime import datetime
-import random
+from __future__ import annotations
+
+import datetime as _dt
 from enum import Enum
-from typing import Protocol
-from enum import Enum, auto
-import re
-from abc import ABC, abstractmethod
 from typing import Any
-from id_validation.validate import ValidationError
+
+from .registry import register
+from .validate import ValidationError
+from .validators.base import BaseValidator, ParsedID
+
 
 class SouthAfricaValidationError(ValidationError):
     pass
 
-re_validate = re.compile(r"^\d{13}$")
 
-class RACE(Enum):
+class Race(Enum):
+    """Apartheid-era race classification codes."""
+
     WHITE = 0
     CAPE_COLOURED = 1
     MALAY = 2
@@ -24,265 +26,158 @@ class RACE(Enum):
     OTHER_COLOURED = 7
     BLACK = 9
 
-class CITIZENSHIP_TYPE(Enum):
+
+class CitizenshipType(Enum):
+    """Citizenship status codes."""
+
     CITIZEN = 0
     PERMANENT_RESIDENT = 1
 
-class GENDER(Enum):
-    MALE = auto()
-    FEMALE = auto()
 
-class SouthAfricaValidator(ABC):
-    def _clean_id_number(self, id_number: str) -> str:
-        v = id_number.strip().replace(" ", "")
-        if not self._validate_str(v):
-            raise ValidationError("Invalid id number")
+_VALID_CITIZENSHIP_VALUES = {c.value for c in CitizenshipType}
+_VALID_RACE_VALUES = {r.value for r in Race}
 
-        return v
 
-    def _validate_str(self, id_number: str) -> bool:
-        if not re_validate.match(id_number):
-            return False
-        return True
+def _luhn_checksum(id_number: str) -> int:
+    """Generate Luhn checksum digit for a 12-digit ID prefix."""
+    digits = [int(d) for d in id_number]
+    odd_digits = digits[-2::-2]
+    even_digits = digits[-1::-2]
+    checksum = sum(odd_digits)
+    for d in even_digits:
+        checksum += sum(divmod(d * 2, 10))
+    return (10 - (checksum % 10)) % 10
 
-    def _add_millenium(self, year_2digits: int) -> int:
-        """
-        This deals with the y2k problem in id numbers by adding the millenium to the year.
-        Any id number with a year greater than the current year is from the previous millenium.
-        This approach is problematic for dates of birth over 100 years ago. I haven't 
-        found a legal reference to resolve this issue but this seems to be the approach
-        used by most other implementations.
-        
-        """
-        current_year_2digits = datetime.now().year % 100
-        if year_2digits < current_year_2digits:
-            return year_2digits + 2000
-        else:
-            return year_2digits + 1900
 
-    def _validate_dob(self, id_number: str) -> bool:
-        """Validates the date of birth part of the id number."""
-        day = int(id_number[4:6])
-        month = int(id_number[2:4])
-        year = int(id_number[0:2])
-        year = self._add_millenium(year)
+def _validate_luhn(id_number: str) -> bool:
+    """Validate the Luhn checksum of a 13-digit ID number."""
+    check_digit = int(id_number[-1])
+    return check_digit == _luhn_checksum(id_number[:-1])
 
-        try:
-            dt = datetime(year, month, day)
-        except ValueError:
-            return False
 
-        return True
-   
+def _parse_dob(id_number: str) -> _dt.date:
+    """Parse date of birth from ID number (first 6 digits: YYMMDD)."""
+    year_2d = int(id_number[0:2])
+    month = int(id_number[2:4])
+    day = int(id_number[4:6])
 
-    # check the checksum of the idnumber using the luhn algorithm
-    def _validate_checksum(self, id_number: str) -> bool:
-        """
-        Validates the checksum digit of the given id number using the Luhn algorithm.
-        """
-        # https://en.wikipedia.org/wiki/Luhn_algorithm
-        check_digit = int(id_number[-1])
-        return check_digit == self.generate_checksum(id_number[:-1])
-        
-        
-    def generate_checksum(self, id_number: str) -> int:
-        digits = list(map(int, str(id_number)))
-        odd_digits = digits[-2::-2]
-        even_digits = digits[-1::-2]
-        checksum = 0
-        checksum += sum(odd_digits)
-        for d in even_digits:
-            checksum += sum(divmod(d * 2, 10))
-        return (10 - (checksum % 10)) % 10
+    # Y2K handling: years less than current 2-digit year are 2000s
+    current_year_2d = _dt.date.today().year % 100
+    year = 2000 + year_2d if year_2d < current_year_2d else 1900 + year_2d
 
-    @abstractmethod
-    def validate(self, id_number: str) -> bool:
-        if not self._validate_str(id_number):
-            return False
+    try:
+        return _dt.date(year, month, day)
+    except ValueError as e:
+        raise SouthAfricaValidationError("Invalid date of birth") from e
 
-        if not self._validate_dob(id_number):
-            return False
 
-        if not self._validate_checksum(id_number):
-            return False
+def _parse_gender(id_number: str) -> str:
+    """Parse gender from ID number (digit 7: 0-4=F, 5-9=M)."""
+    gender_digit = int(id_number[6])
+    return "F" if gender_digit < 5 else "M"
 
-        return True
 
-    def extract_dob(self, id_number: str) -> datetime:
-        if not self.validate(id_number):
-            raise SouthAfricaValidationError("Invalid ID number")
+def _base_parse(id_number: str) -> tuple[str, _dt.date, str, int]:
+    """Common parsing for all South African ID types.
 
-        day = int(id_number[4:6])
-        month = int(id_number[2:4])
-        year = int(id_number[0:2])
+    Returns: (normalized_id, dob, gender, checksum)
+    """
+    v = id_number.strip().replace(" ", "")
 
-        year = self._add_millenium(year)
+    if len(v) != 13 or not v.isdigit():
+        raise SouthAfricaValidationError("Invalid ID format: must be 13 digits")
 
-        return datetime(year, month, day)
+    if not _validate_luhn(v):
+        raise SouthAfricaValidationError("Invalid checksum")
 
-    def extract_gender(self, id_number: str) -> GENDER:
-        if not self.validate(id_number):
-            raise SouthAfricaValidationError("Invalid ID number")
+    dob = _parse_dob(v)
+    gender = _parse_gender(v)
+    checksum = int(v[-1])
 
-        digit = id_number[6]
-        if digit in "01234":
-            return GENDER.FEMALE
-        else:
-            return GENDER.MALE
+    return v, dob, gender, checksum
 
-    def extract_checksum(self, id_number: str) -> int:
-        if not self.validate(id_number):
-            raise SouthAfricaValidationError("Invalid ID number")
 
-        return int(id_number[-1])
+@register("ZA")
+class PostApartheidSouthAfricaValidator(BaseValidator):
+    """Post-apartheid South African ID validator.
 
-    @abstractmethod
-    def extract_data(self, id_number: str) -> dict[str, Any]:
+    Validates 13-digit ID numbers issued after 1986 that include
+    citizenship status but not race classification.
+    """
 
-        if not self.validate(id_number):
-            raise SouthAfricaValidationError("Invalid ID number")
+    country_code = "ZA"
 
-        return {
-            "dob": self.extract_dob(id_number),
-            "gender": self.extract_gender(id_number),
-            "checksum": self.extract_checksum(id_number),
+    def normalize(self, id_number: str) -> str:
+        return id_number.strip().replace(" ", "")
+
+    def parse(self, id_number: str) -> ParsedID:
+        v, dob, gender, checksum = _base_parse(id_number)
+
+        citizenship_digit = int(v[10])
+        if citizenship_digit not in _VALID_CITIZENSHIP_VALUES:
+            raise SouthAfricaValidationError("Invalid citizenship digit")
+
+        citizenship = CitizenshipType(citizenship_digit)
+
+        return ParsedID(
+            country_code="ZA",
+            id_number=v,
+            id_type="NATIONAL_ID",
+            dob=dob,
+            gender=gender,
+            extra={
+                "citizenship": citizenship.name,
+                "citizenship_code": citizenship_digit,
+                "checksum": checksum,
+            },
+        )
+
+
+@register("ZA_OLD")
+class ApartheidSouthAfricaValidator(BaseValidator):
+    """Apartheid-era South African ID validator.
+
+    Validates 13-digit ID numbers that include both race classification
+    and citizenship status, as used during the apartheid era.
+    """
+
+    country_code = "ZA_OLD"
+
+    def normalize(self, id_number: str) -> str:
+        return id_number.strip().replace(" ", "")
+
+    def parse(self, id_number: str) -> ParsedID:
+        v, dob, gender, checksum = _base_parse(id_number)
+
+        citizenship_digit = int(v[10])
+        race_digit = int(v[11])
+
+        if race_digit not in _VALID_RACE_VALUES:
+            raise SouthAfricaValidationError("Invalid race digit")
+
+        race = Race(race_digit)
+        citizenship = CitizenshipType(citizenship_digit) if citizenship_digit in _VALID_CITIZENSHIP_VALUES else None
+
+        extra: dict[str, Any] = {
+            "race": race.name,
+            "race_code": race_digit,
+            "checksum": checksum,
         }
 
-  
+        if citizenship is not None:
+            extra["citizenship"] = citizenship.name
+            extra["citizenship_code"] = citizenship_digit
 
-class PostApartheidSouthAfricaValidator(SouthAfricaValidator):
-    def _validate_citizenship(self, id_number: str) -> bool:
-        citizenship = int(id_number[10:11])
-        return citizenship in [CITIZENSHIP_TYPE.CITIZEN.value, CITIZENSHIP_TYPE.PERMANENT_RESIDENT.value]
+        return ParsedID(
+            country_code="ZA_OLD",
+            id_number=v,
+            id_type="NATIONAL_ID",
+            dob=dob,
+            gender=gender,
+            extra=extra,
+        )
 
-    def validate(self, id_number: str) -> bool:
-        if not super().validate(id_number):
-            return False
 
-        if not self._validate_citizenship(id_number):
-            return False
-        return True
-
-    def generate_idno(self, dob: datetime=None, gender: GENDER|None=None, citizenship: CITIZENSHIP_TYPE|None=None):
-        start_date = datetime(1900, 1, 1)
-        end_date = datetime.now()
-        # generate a random date
-        if dob is None:
-            dob = datetime.fromtimestamp(start_date.timestamp() + random.random() * (end_date.timestamp() - start_date.timestamp()))
-
-        if gender is None:
-            gender = random.choice(list(GENDER))
-
-        if citizenship is None:
-            citizenship = random.choice(list(CITIZENSHIP_TYPE))
-
-        if gender == GENDER.FEMALE:
-            gender_digit = random.randint(0, 4)
-        else:
-            gender_digit = random.randint(5, 9)
-
-        sequence = "".join(str(i) for i in random.sample(range(10), 3))
-
-        idno = dob.strftime("%y%m%d") + str(gender_digit) + sequence + str(citizenship.value) + random.choice("78")
-        idno += str(self.generate_checksum(idno))
-
-        return idno
-
-    def extract_citizenship(self, id_number: str) -> CITIZENSHIP_TYPE:
-        if not self.validate(id_number):
-            raise SouthAfricaValidationError("Invalid ID number")
-
-        citizenship = int(id_number[10])
-        return CITIZENSHIP_TYPE(citizenship)
-
-    def extract_data(self, id_number: str) -> dict[str, Any]:
-        data = super().extract_data(id_number)
-        data["citizenship"] = self.extract_citizenship(id_number)
-        return data
-            
-
-class ApartheidSouthAfricaValidator(SouthAfricaValidator):
-    RACE_DIGIT = 11
-    CITIZENSHIP_DIGIT = 10
-
-    def _validate_race(self, id_number: str) -> bool:
-        race = int(id_number[ApartheidSouthAfricaValidator.RACE_DIGIT])
-        
-        return race in [
-            RACE.WHITE.value,
-            RACE.CAPE_COLOURED.value,
-            RACE.GRIQUA.value,
-            RACE.MALAY.value,
-            RACE.CHINESE.value,
-            RACE.INDIAN.value,
-            RACE.OTHER_ASIATIC.value,
-            RACE.OTHER_COLOURED.value,
-            RACE.BLACK.value
-        ]
-    
-    def _validate_citizenship(self, id_number: str) -> bool:
-        citizenship = int(id_number[ApartheidSouthAfricaValidator.CITIZENSHIP_DIGIT])
-        try:
-            CITIZENSHIP_TYPE(citizenship)
-        except ValueError:
-            return False
-
-        return True
-
-    def validate(self, id_number: str) -> bool:
-        if not super().validate(id_number):
-            return False
-
-        if not self._validate_race(id_number):
-            return False
-
-        return True
-
-    def extract_race(self, id_number: str) -> RACE:
-        if not self.validate(id_number):
-            raise ValidationError("Invalid ID number")
-
-        race_digit = int(id_number[ApartheidSouthAfricaValidator.RACE_DIGIT])
-        return RACE(race_digit)
-
-    def extract_citizenship(self, id_number: str) -> CITIZENSHIP_TYPE:
-        if not self.validate(id_number):
-            raise ValidationError("Invalid ID Number")
-
-        citizenship_digit = int(id_number[ApartheidSouthAfricaValidator.CITIZENSHIP_DIGIT])
-        return CITIZENSHIP_TYPE(citizenship_digit)
-
-    def extract_data(self, id_number: str) -> dict[str, Any]:
-        data = super().extract_data(id_number)
-        data["race"] = self.extract_race(id_number)
-        data["citizenship"] = self.extract_citizenship(id_number)
-
-        return data
-
-    def generate_idno(self, dob: datetime=None, gender: GENDER|None=None, race: RACE|None=None, citizenship: CITIZENSHIP_TYPE|None=None):
-        start_date = datetime(1900, 1, 1)
-        end_date = datetime.now()
-
-        if dob is None:
-            dob = datetime.fromtimestamp(start_date.timestamp() + random.random() * (end_date.timestamp() - start_date.timestamp()))
-
-        if gender is None:
-            gender = random.choice(list(GENDER))
-
-        if race is None:
-            race = random.choice(list(RACE))
-
-        if citizenship is None:
-            citizenship = random.choice(list(CITIZENSHIP_TYPE))
-
-        if gender == GENDER.FEMALE:
-            gender_digit = random.randint(0, 4)
-        else:
-            gender_digit = random.randint(5, 9)
-
-        sequence = "".join(str(i) for i in random.sample(range(10), 3))
-
-        idno = dob.strftime("%y%m%d") + str(gender_digit) + sequence + str(citizenship.value) + str(race.value)
-        idno += str(self.generate_checksum(idno))
-
-        return idno
+# Re-export for backwards compatibility
+RACE = Race
+CITIZENSHIP_TYPE = CitizenshipType

@@ -1,7 +1,8 @@
 import pytest
 
+
 @pytest.fixture
-def invalid_str_id_numbers():
+def invalid_str_id_numbers() -> list[str]:
     return [
         "",
         "123456789",
@@ -9,13 +10,14 @@ def invalid_str_id_numbers():
         "3432dfdsf",
     ]
 
+
 @pytest.fixture
-def invalid_date_id_numbers():
+def invalid_date_id_numbers() -> list[str]:
     return ["7113245929185", "7405325437186", "7702295556082"]
 
 
 @pytest.fixture
-def male_id_numbers():
+def male_id_numbers() -> list[str]:
     return [
         "0303068942075",
         "1701077451070",
@@ -26,7 +28,7 @@ def male_id_numbers():
 
 
 @pytest.fixture
-def female_id_numbers():
+def female_id_numbers() -> list[str]:
     return [
         "2904251790177",
         "1910252128177",
@@ -37,5 +39,5 @@ def female_id_numbers():
 
 
 @pytest.fixture
-def invalid_checksum_id_numbers():
+def invalid_checksum_id_numbers() -> list[str]:
     return ["7106245929181", "7405095437182", "7710165556083"]

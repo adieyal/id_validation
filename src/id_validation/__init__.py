@@ -1,5 +1,15 @@
+from typing import TypedDict
+
+from typing_extensions import Unpack
+
 from .validate import Validator, ValidationError
 from .registry import VALIDATORS, get as _get_validator_type
+
+
+class ValidatorOptions(TypedDict, total=False):
+    """Options that can be passed to validators."""
+
+    strict_checksum: bool  # Used by DK (Denmark) CPR validator
 
 # Import validators (side-effect: register with registry)
 from .validate_botswana import BotswanaValidator
@@ -42,21 +52,20 @@ from .validators.ec_cedula import EcuadorCedulaValidator
 
 VERSION = "0.6.0"
 
-__all__ = ["ValidatorFactory", "VALIDATORS"]
-
-
-# Backwards-compatible explicit registrations (in case any module import ordering changes)
-from .registry import register as _register
-
-_register("BW")(BotswanaValidator)
-_register("NG")(NigeriaValidator)
-_register("ZA")(PostApartheidSouthAfricaValidator)
-_register("ZA_OLD")(ApartheidSouthAfricaValidator)
-_register("ZW")(ZimbabweValidator)
+__all__ = ["ValidatorFactory", "VALIDATORS", "ValidationError", "Validator"]
 
 
 class ValidatorFactory:
     @staticmethod
-    def get_validator(country_code: str, *args, **kwargs) -> Validator:
+    def get_validator(country_code: str, **kwargs: Unpack[ValidatorOptions]) -> Validator:
+        """Get a validator instance for the given country code.
+
+        Args:
+            country_code: ISO 3166-1 alpha-2 country code (e.g., "US", "FI", "DK")
+            **kwargs: Validator-specific options (e.g., strict_checksum for DK)
+
+        Returns:
+            Validator instance for the specified country
+        """
         cls = _get_validator_type(country_code)
-        return cls(*args, **kwargs)
+        return cls(**kwargs)

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import datetime as _dt
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any
 
 from ..validate import ValidationError, Validator
 
@@ -15,17 +16,19 @@ class ParsedID:
 
     country_code: str
     id_number: str
-    id_type: Optional[str] = None
+    id_type: str | None = None
 
     # Common decoded fields
-    dob: Any | None = None  # typically datetime.date
+    dob: _dt.date | None = None
     gender: str | None = None  # 'M'|'F' or other country-specific
 
     # Additional decoded metadata (region codes, municipality codes, etc.)
-    extra: Dict[str, Any] | None = None
+    extra: dict[str, Any] | None = None
 
 
 class BaseValidator(Validator):
+    """Base class for validators implementing the Validator protocol."""
+
     country_code: str = ""
 
     def normalize(self, id_number: str) -> str:
