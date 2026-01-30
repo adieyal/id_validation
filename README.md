@@ -47,6 +47,14 @@ The following codes are available:
     SE - Sweden (Personnummer)
     TR - Turkey (T.C. Kimlik No)
 
+    BR - Brazil (CPF)
+    CL - Chile (RUT/RUN)
+    HR - Croatia (OIB)
+    MX - Mexico (CURP)
+    NL - Netherlands (BSN)
+    PT - Portugal (NIF)
+    SI - Slovenia (EMŠO)
+
 ## Supported countries & extracted fields
 
 | Code | Country / ID | Extracted fields (when valid) |
@@ -73,6 +81,13 @@ The following codes are available:
 | ES | Spain (DNI/NIE) | `type` (DNI/NIE), plus `number`, `letter` (and `prefix` for NIE) |
 | SE | Sweden (personnummer) | `dob`, `gender`, `coordination_number`, `individual_number`, `checksum` |
 | TR | Turkey (TCKN) | `checksum10`, `checksum11` *(no DOB/gender encoded)* |
+| BR | Brazil (CPF) | `check_digits` |
+| CL | Chile (RUT/RUN) | `number`, `dv` |
+| HR | Croatia (OIB) | `checksum` |
+| MX | Mexico (CURP) | `dob`, `gender`, `state_code`, `state_name`, `homonym`, `checksum` |
+| NL | Netherlands (BSN) | *(none)* |
+| PT | Portugal (NIF) | `checksum` |
+| SI | Slovenia (EMŠO) | `dob`, `gender`, `region_code`, `serial`, `checksum` |
 
 ## References
 See `docs/references/*.md` for per-country reference links and implementation notes.

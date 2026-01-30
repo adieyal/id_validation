@@ -27,6 +27,14 @@ from .validators.cz_rodne_cislo import CzechRodneCisloValidator
 from .validators.sk_rodne_cislo import SlovakiaRodneCisloValidator
 from .validators.dk_cpr import DenmarkCPRValidator
 
+from .validators.mx_curp import MexicoCURPValidator
+from .validators.nl_bsn import NetherlandsBSNValidator
+from .validators.pt_nif import PortugalNIFValidator
+from .validators.si_emso import SloveniaEMSOValidator
+from .validators.hr_oib import CroatiaOIBValidator
+from .validators.br_cpf import BrazilCPFValidator
+from .validators.cl_rut import ChileRUTValidator
+
 VERSION = "0.6.0"
 
 __all__ = ["ValidatorFactory", "VALIDATORS"]
