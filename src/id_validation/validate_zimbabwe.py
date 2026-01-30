@@ -1,11 +1,14 @@
-from .validate import ValidationError
+from __future__ import annotations
+
 import re
 
-"""
-Source: Zimbabwe 2018 Elections Biometric Voters' Roll Analysis
-https://www.slideshare.net/povonews/zimbabwe-2018-biometric-voters-roll-analysis-pachedu
-"""
-region_lookup = {
+from .registry import register
+from .validate import ValidationError
+from .validators.base import BaseValidator, ParsedID
+
+# Source: Zimbabwe 2018 Elections Biometric Voters' Roll Analysis
+# https://www.slideshare.net/povonews/zimbabwe-2018-biometric-voters-roll-analysis-pachedu
+_REGION_LOOKUP: dict[str, str] = {
     "02": "Beitbridge",
     "03": "Mberengwa",
     "04": "Bikita",
@@ -13,7 +16,7 @@ region_lookup = {
     "06": "Binga",
     "07": "Buhera",
     "08": "Bulawayo",
-    "10": "Unknown", # (Undetermined) (believed: Mhondoro- "11": "Ngezi)    ",
+    "10": "Unknown",  # (Undetermined) (believed: Mhondoro-Ngezi)
     "11": "Muzarabani",
     "12": "Chivi",
     "13": "Chipinge",
@@ -41,7 +44,7 @@ region_lookup = {
     "43": "Marondera",
     "44": "Chimanimani",
     "45": "Mt. Darwin",
-    "46": "Unknown", # (Undetermined) (believed: Mbire)
+    "46": "Unknown",  # (Undetermined) (believed: Mbire)
     "47": "Murehwa",
     "48": "Mutoko",
     "49": "Mudzi",
@@ -69,87 +72,80 @@ region_lookup = {
     "86": "Zvimba",
 }
 
-class ZimbabweValidator:
-    _lookup = {
-        1: "A", 2: "B", 3: "C", 4: "D",
-        5: "E", 6: "F", 7: "G", 8: "H",
-        9: "J", 10: "K", 11: "L", 12: "M",
-        13: "N", 14: "P", 15: "Q", 16: "R",
-        17: "S", 18: "T", 19: "V", 20: "W",
-        21: "X", 22: "Y", 23: "Z",
-    }
+# Check letter lookup for mod-23 checksum
+_CHECK_LETTER_LOOKUP: dict[int, str] = {
+    1: "A", 2: "B", 3: "C", 4: "D",
+    5: "E", 6: "F", 7: "G", 8: "H",
+    9: "J", 10: "K", 11: "L", 12: "M",
+    13: "N", 14: "P", 15: "Q", 16: "R",
+    17: "S", 18: "T", 19: "V", 20: "W",
+    21: "X", 22: "Y", 23: "Z",
+}
 
-    def _get_region(self, region_id: str) -> str:
-        """
-        Returns the region name for the given region id
-        """
-        try:
-            return region_lookup[region_id]
-        except IndexError:
-            raise ValidationError(f"Invalid region code: {region_id}")
+_ALLOWED_LETTERS = "".join(_CHECK_LETTER_LOOKUP.values())
+_ZW_RE = re.compile(rf"^\d{{2}}\d{{6,7}}[{_ALLOWED_LETTERS}]\d{{2}}$")
 
-    def _checksum(self, id_number: str) -> bool:
-        """
-        Validates the checksum digit of the given id number using mod 23
-        """
-        registration_code, sequence_number, check_letter, _ = self._extract_parts(id_number)
-        check_number = int(registration_code + sequence_number)
-        mod = check_number % 23
-
-        return check_letter == ZimbabweValidator._lookup[mod]
-
-    def _clean_id_number(self, id_number: str) -> str:
-        return id_number.replace("-", "").replace(" ", "")
-
-    def _validate_str(self, id_number: str) -> str:
-        clean = self._clean_id_number(id_number)
-        allowed_letters = "".join(ZimbabweValidator._lookup.values())
-        re_validate = re.compile(r"^\d{2}\d{6,7}[{%s}]\d{2}$" % allowed_letters)
-
-        return re_validate.match(clean) is not None
-
-    def _validate_region(self, id_number: str) -> str:
-        region1 = id_number[0:2]
-        region2 = id_number[-2:]
-        return region1 in region_lookup and region2 in region_lookup
-
-    def _extract_parts(self, id_number: str) -> list[str]:
-        registration_code = id_number[0:2]
-        sequence_number = id_number[2:-3]
-        check_letter = id_number[-3]
-        district_code = id_number[-2:]
-
-        return registration_code, sequence_number, check_letter, district_code
+# Backwards compatibility export
+REGION_LOOKUP = _REGION_LOOKUP
 
 
-    def validate(self, id_number: str) -> bool:
-        """
-        Verify the region codes as well as use the modulus 23 validation
-        """
-        cleaned_id_number = self._clean_id_number(id_number)
-        if not self._validate_str(cleaned_id_number):
-            return False
+def _extract_parts(id_number: str) -> tuple[str, str, str, str]:
+    """Extract parts from a cleaned Zimbabwe ID number."""
+    registration_code = id_number[0:2]
+    sequence_number = id_number[2:-3]
+    check_letter = id_number[-3]
+    district_code = id_number[-2:]
+    return registration_code, sequence_number, check_letter, district_code
 
-        registration_code, _, _, district_code = self._extract_parts(cleaned_id_number)
 
-        try:
-            _ = self._get_region(registration_code)
-            _ = self._get_region(district_code)
-        except ValidationError:
-            return False
+def _validate_checksum(id_number: str) -> bool:
+    """Validate the checksum digit using mod 23."""
+    registration_code, sequence_number, check_letter, _ = _extract_parts(id_number)
+    check_number = int(registration_code + sequence_number)
+    mod = check_number % 23
+    expected = _CHECK_LETTER_LOOKUP.get(mod)
+    return check_letter == expected
 
-        return self._checksum(cleaned_id_number)
 
-    def extract_data(self, id_number: str) -> dict[str, str]:
-        is_valid = self.validate(id_number)
-        if not is_valid:
-            raise ValidationError("Invalid ID number")
-        
-        cleaned_id_number = self._clean_id_number(id_number)
-        registration_code, sequence_number, _, district_code = self._extract_parts(cleaned_id_number)
+@register("ZW")
+class ZimbabweValidator(BaseValidator):
+    """Zimbabwe National ID validator.
 
-        return {
-            "registration_region": self._get_region(registration_code),
-            "district": self._get_region(district_code),
-            "sequence_number": sequence_number
-        }
+    Validates region codes and uses modulus 23 checksum validation.
+    """
+
+    country_code = "ZW"
+
+    def normalize(self, id_number: str) -> str:
+        return id_number.replace("-", "").replace(" ", "").strip()
+
+    def parse(self, id_number: str) -> ParsedID:
+        v = self.normalize(id_number)
+
+        if not _ZW_RE.match(v):
+            raise ValidationError("Invalid Zimbabwe ID format")
+
+        registration_code, sequence_number, check_letter, district_code = _extract_parts(v)
+
+        if registration_code not in _REGION_LOOKUP:
+            raise ValidationError(f"Invalid registration region code: {registration_code}")
+
+        if district_code not in _REGION_LOOKUP:
+            raise ValidationError(f"Invalid district code: {district_code}")
+
+        if not _validate_checksum(v):
+            raise ValidationError("Invalid checksum")
+
+        return ParsedID(
+            country_code="ZW",
+            id_number=v,
+            id_type="NATIONAL_ID",
+            extra={
+                "registration_region": _REGION_LOOKUP[registration_code],
+                "registration_code": registration_code,
+                "district": _REGION_LOOKUP[district_code],
+                "district_code": district_code,
+                "sequence_number": sequence_number,
+                "check_letter": check_letter,
+            },
+        )

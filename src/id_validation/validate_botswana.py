@@ -1,61 +1,53 @@
+from __future__ import annotations
+
 import logging
 import re
-from enum import Enum
 
-from id_validation.validate import ValidationError
+from .registry import register
+from .validate import ValidationError
+from .validators.base import BaseValidator, ParsedID
 
-re_valid_id = re.compile(r"\d{9}")
+_BOTSWANA_RE = re.compile(r"^\d{9}$")
+_VALID_GENDER_DIGITS = {"1", "2"}
+
 logger = logging.getLogger(__name__)
-   
-class BotswanaValidator:
 
-    class GENDER(Enum):
-        MALE = "1"
-        FEMALE = "2"
 
-    def __init__(self):
-        logger.warning("The BotswanaValidator has not been validated against the official documentation but only using anecdotal information available online.")    
+@register("BW")
+class BotswanaValidator(BaseValidator):
+    """Botswana National ID validator.
 
-    def _clean(self, s: str) -> str:
-        return s.strip()
+    Warning: This validator has not been validated against official documentation,
+    only using anecdotal information available online.
+    """
 
-    def _validate_str(self, s: str) -> bool:
-        s = self._clean(s)
-        return re_valid_id.fullmatch(s) is not None
+    country_code = "BW"
 
-    def _validate_gender(self, s: str) -> bool:
-        s = self._clean(s)
-        if not self._validate_str(s):
-            return False
+    def __init__(self) -> None:
+        logger.warning(
+            "The BotswanaValidator has not been validated against official "
+            "documentation but only using anecdotal information available online."
+        )
 
-        try:
-            gender_digit = self._extract_gender_digit(s)
-            return BotswanaValidator.GENDER(gender_digit) in BotswanaValidator.GENDER.__members__.values()
-        except ValueError:
-            return False
+    def normalize(self, id_number: str) -> str:
+        return id_number.strip()
 
-    def validate(self, s: str) -> bool:
-        if not self._validate_str(s):
-            return False
+    def parse(self, id_number: str) -> ParsedID:
+        v = self.normalize(id_number)
 
-        if not self._validate_gender(s):
-            return False
+        if not _BOTSWANA_RE.fullmatch(v):
+            raise ValidationError("Invalid Botswana ID format")
 
-        return True
+        gender_digit = v[4]
+        if gender_digit not in _VALID_GENDER_DIGITS:
+            raise ValidationError("Invalid gender digit")
 
-    def _extract_gender_digit(self, s: str) -> str:
-        return s[4]
+        gender = "M" if gender_digit == "1" else "F"
 
-    def _extract_gender(self, s: str) -> GENDER:
-        if not self.validate(s):
-            raise ValidationError("Invalid ID number")
-        gender_digit = self._extract_gender_digit(s)
-        return BotswanaValidator.GENDER(gender_digit)
-
-    def extract_data(self, s):
-        if not self.validate(s):
-            raise ValidationError("Invalid ID number")
-
-        return {
-            "gender": self._extract_gender(s)
-        }
+        return ParsedID(
+            country_code="BW",
+            id_number=v,
+            id_type="NATIONAL_ID",
+            gender=gender,
+            extra={"gender_digit": gender_digit},
+        )

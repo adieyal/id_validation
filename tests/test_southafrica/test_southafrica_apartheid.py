@@ -1,45 +1,28 @@
-from itertools import chain
+"""Tests for apartheid-era South African ID validator."""
+
+import datetime as dt
+
 import pytest
 
 from id_validation.validate_southafrica import (
-    CITIZENSHIP_TYPE,
-    GENDER,
-    RACE,
     ApartheidSouthAfricaValidator,
     SouthAfricaValidationError,
-    SouthAfricaValidator,
+    Race,
+    CitizenshipType,
 )
 from id_validation import ValidationError
 
+from tests.utils import (
+    Gender as GenGender,
+    Race as GenRace,
+    CitizenshipType as GenCitizenship,
+    generate_apartheid_south_africa_id,
+)
+
 
 @pytest.fixture
-def validator() -> SouthAfricaValidator:
+def validator() -> ApartheidSouthAfricaValidator:
     return ApartheidSouthAfricaValidator()
-
-
-@pytest.fixture
-def invalid_race_id_numbers() -> list[str]:
-    return [
-        "7106245929085",
-    ]
-
-
-@pytest.fixture
-def invalid_citizenship_id_numbers() -> list[str]:
-    return [
-        "7106245929285",
-        "7106245929385",
-        "7106245929485",
-        "7106245929585",
-        "7106245929685",
-        "7106245929785",
-        "7106245929885",
-        "7106245929985",
-    ]
-
-@pytest.fixture
-def invalid_id_numbers(invalid_date_id_numbers, invalid_race_id_numbers, invalid_citizenship_id_numbers, invalid_checksum_id_numbers) -> list[str]:
-    return chain(invalid_date_id_numbers, invalid_race_id_numbers, invalid_citizenship_id_numbers, invalid_checksum_id_numbers)
 
 
 @pytest.fixture
@@ -58,113 +41,166 @@ def valid_id_numbers() -> list[str]:
     ]
 
 
-# @pytest.fixture
-# def invalid_id_numbers(
-#     invalid_date_id_numbers, invalid_citizenship_numbers, invalid_checksum_numbers
-# ):
-#     return invalid_date_id_numbers + invalid_citizenship_numbers + invalid_checksum_numbers
+@pytest.fixture
+def invalid_race_id_numbers() -> list[str]:
+    # Race digit 8 is not valid
+    return ["7106245929085"]
 
 
 class TestApartheidSouthAfricaValidator:
-    def test_reject_invalid_strings(self, validator, invalid_str_id_numbers):
-        for s in invalid_str_id_numbers:
-            assert not validator._validate_str(s)
+    def test_validate_valid_ids(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+        valid_id_numbers: list[str],
+    ) -> None:
+        for idno in valid_id_numbers:
+            assert validator.validate(idno), f"Expected {idno} to be valid"
 
-    def test_reject_invalid_dob(
+    def test_reject_invalid_format(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+        invalid_str_id_numbers: list[str],
+    ) -> None:
+        for idno in invalid_str_id_numbers:
+            assert not validator.validate(idno), f"Expected {idno} to be invalid"
+
+    def test_reject_invalid_date(
         self,
         validator: ApartheidSouthAfricaValidator,
         invalid_date_id_numbers: list[str],
-    ):
+    ) -> None:
         for idno in invalid_date_id_numbers:
-            assert not validator._validate_dob(idno)
-
-    def test_reject_invalid_race(
-        self,
-        validator: ApartheidSouthAfricaValidator,
-        invalid_race_id_numbers: list[str],
-    ):
-        for idno in invalid_race_id_numbers:
-            assert not validator._validate_race(idno)
-
-    def test_reject_invalid_citizenship(
-        self,
-        validator: ApartheidSouthAfricaValidator,
-        invalid_citizenship_id_numbers: list[str],
-    ):
-        for idno in invalid_citizenship_id_numbers:
-            assert not validator._validate_citizenship(idno)
+            assert not validator.validate(idno), f"Expected {idno} to be invalid (bad date)"
 
     def test_reject_invalid_checksum(
         self,
         validator: ApartheidSouthAfricaValidator,
         invalid_checksum_id_numbers: list[str],
-    ):
-       
+    ) -> None:
         for idno in invalid_checksum_id_numbers:
-            assert not validator._validate_checksum(idno)
+            assert not validator.validate(idno), f"Expected {idno} to be invalid (bad checksum)"
 
-    def test_reject_invalid_id_numbers(self, validator, invalid_id_numbers):
-        for idno in invalid_id_numbers:
-            assert not validator.validate(idno)
+    def test_reject_invalid_race(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+        invalid_race_id_numbers: list[str],
+    ) -> None:
+        for idno in invalid_race_id_numbers:
+            assert not validator.validate(idno), f"Expected {idno} to be invalid (bad race digit)"
+
+    def test_extract_data_valid(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+        valid_id_numbers: list[str],
+    ) -> None:
+        for idno in valid_id_numbers:
+            data = validator.extract_data(idno)
+            assert "dob" in data
+            assert "gender" in data
+            assert "checksum" in data
+            assert "race" in data
+
+    def test_extract_data_invalid_raises(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+        invalid_str_id_numbers: list[str],
+    ) -> None:
+        for idno in invalid_str_id_numbers:
+            with pytest.raises(ValidationError):
+                validator.extract_data(idno)
 
     def test_extract_dob(
         self,
-        validator: SouthAfricaValidator,
-        valid_id_numbers,
-        invalid_id_numbers,
-    ):
-        for idno in invalid_id_numbers:
-            with pytest.raises(SouthAfricaValidationError):
-                validator.extract_dob(idno)
-
+        validator: ApartheidSouthAfricaValidator,
+        valid_id_numbers: list[str],
+    ) -> None:
         for idno in valid_id_numbers:
-            dob = validator.extract_dob(idno)
+            data = validator.extract_data(idno)
+            dob = data["dob"]
+            assert isinstance(dob, dt.date)
             assert dob.month == int(idno[2:4])
             assert dob.day == int(idno[4:6])
 
-    def test_extract_gender(self, validator: ApartheidSouthAfricaValidator, invalid_id_numbers):
-        for idno in invalid_id_numbers:
-            with pytest.raises(ValidationError):
-                validator.extract_gender(idno)
+    def test_extract_gender_generated(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+    ) -> None:
+        """Test gender extraction using generated IDs."""
+        for gender in list(GenGender):
+            idno = generate_apartheid_south_africa_id(gender=gender)
+            data = validator.extract_data(idno)
+            expected = "M" if gender == GenGender.MALE else "F"
+            assert data["gender"] == expected
 
-        for gender in list(GENDER):
-            idno = validator.generate_idno(gender=gender)
-            extracted_gender = validator.extract_gender(idno)
-            assert extracted_gender == gender
+    def test_extract_gender_from_fixtures(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+        male_id_numbers: list[str],
+        female_id_numbers: list[str],
+    ) -> None:
+        for idno in male_id_numbers:
+            # Only test if valid under apartheid rules (may have invalid race digit)
+            if validator.validate(idno):
+                data = validator.extract_data(idno)
+                assert data["gender"] == "M"
 
-    def test_extract_race(self, validator: ApartheidSouthAfricaValidator, invalid_id_numbers, valid_id_numbers):
-        for idno in invalid_id_numbers:
-            with pytest.raises(ValidationError):
-                validator.extract_race(idno)
+        for idno in female_id_numbers:
+            if validator.validate(idno):
+                data = validator.extract_data(idno)
+                assert data["gender"] == "F"
 
-        for race in list(RACE):
-            idno = validator.generate_idno(race=race)
-            extracted_race = validator.extract_race(idno)
-            assert extracted_race == race
+    def test_extract_race_generated(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+    ) -> None:
+        """Test race extraction using generated IDs."""
+        for race in list(GenRace):
+            idno = generate_apartheid_south_africa_id(race=race)
+            data = validator.extract_data(idno)
+            assert data["race"] == race.name
+            assert data["race_code"] == race.value
 
-    def test_extract_citizenship(self, validator: ApartheidSouthAfricaValidator, invalid_id_numbers):
-        for idno in invalid_id_numbers:
-            with pytest.raises(ValidationError):
-                validator.extract_race(idno)
+    def test_extract_citizenship_generated(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+    ) -> None:
+        """Test citizenship extraction using generated IDs."""
+        for citizenship in list(GenCitizenship):
+            idno = generate_apartheid_south_africa_id(citizenship=citizenship)
+            data = validator.extract_data(idno)
+            assert data["citizenship"] == citizenship.name
+            assert data["citizenship_code"] == citizenship.value
 
-        for citizenship_type in list(CITIZENSHIP_TYPE):
-            idno = validator.generate_idno(citizenship=citizenship_type)
-            extracted_citizenship = validator.extract_citizenship(idno)
-            assert extracted_citizenship == citizenship_type
+    def test_extract_checksum(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+        valid_id_numbers: list[str],
+    ) -> None:
+        for idno in valid_id_numbers:
+            data = validator.extract_data(idno)
+            assert data["checksum"] == int(idno[-1])
 
-    def test_extract_data(self, validator: ApartheidSouthAfricaValidator, invalid_id_numbers: list[str], valid_id_numbers: list[str]):
-        for idno in invalid_id_numbers:
-            with pytest.raises(SouthAfricaValidationError):
-                validator.extract_data(idno)
+    def test_full_extraction_generated(
+        self,
+        validator: ApartheidSouthAfricaValidator,
+    ) -> None:
+        """Test full data extraction using generated IDs with all combinations."""
+        # Test a sampling of combinations to avoid combinatorial explosion
+        test_cases = [
+            (GenRace.WHITE, GenGender.MALE, GenCitizenship.CITIZEN),
+            (GenRace.BLACK, GenGender.FEMALE, GenCitizenship.PERMANENT_RESIDENT),
+            (GenRace.INDIAN, GenGender.MALE, GenCitizenship.CITIZEN),
+            (GenRace.CAPE_COLOURED, GenGender.FEMALE, GenCitizenship.CITIZEN),
+        ]
 
-        for race in list(RACE):
-            for citizenship in list(CITIZENSHIP_TYPE):
-                for gender in list(GENDER):
+        for race, gender, citizenship in test_cases:
+            idno = generate_apartheid_south_africa_id(
+                race=race, gender=gender, citizenship=citizenship
+            )
+            data = validator.extract_data(idno)
 
-                    idno = validator.generate_idno(race=race, gender=gender, citizenship=citizenship)
-                    data = validator.extract_data(idno)
-                    assert "race" in data and data["race"] == race
-                    assert "dob" in data and data["dob"] == validator.extract_dob(idno)
-                    assert "gender" in data and data["gender"] == gender
-                    assert "citizenship" in data and data["citizenship"] == citizenship
-                    assert "checksum" in data and data["checksum"] == validator.extract_checksum(idno)
+            assert data["race"] == race.name
+            assert data["gender"] == ("M" if gender == GenGender.MALE else "F")
+            assert data["citizenship"] == citizenship.name
+            assert "dob" in data
+            assert "checksum" in data

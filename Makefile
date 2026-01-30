@@ -1,3 +1,9 @@
+install:
+	pip install -e ".[dev]"
+
+install-prod:
+	pip install -e .
+
 clean:
 	rm -rf dist
 

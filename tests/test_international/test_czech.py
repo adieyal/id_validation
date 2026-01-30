@@ -21,7 +21,7 @@ def test_cz_valid_10_digit_male():
     idno = make_rc10(dt.date(2001, 1, 1), 123, female=False)
     parsed = v.parse(idno)
     assert parsed.dob == dt.date(2001, 1, 1)
-    assert parsed.gender is None  # male doesn't use +50, so not encoded here
+    assert parsed.gender == "M"
     assert parsed.extra["checksum"] == int(idno[-1])
 
 

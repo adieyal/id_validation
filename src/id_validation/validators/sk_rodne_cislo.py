@@ -12,10 +12,10 @@ from .base import BaseValidator, ParsedID
 _RC_RE = re.compile(r"^(\d{9,10})$")
 
 
-def _decode_rc_date(mm_raw: int, *, year: int, dd: int) -> tuple[_dt.date, str | None, dict[str, Any]]:
-    gender: str | None = None
+def _decode_rc_date(mm_raw: int, *, year: int, dd: int) -> tuple[_dt.date, str, dict[str, Any]]:
     mm = mm_raw
     special_series = False
+    gender = "M"
 
     if mm >= 70:
         mm -= 70

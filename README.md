@@ -4,8 +4,31 @@ Supports multiple countries; each validator can validate format/checksum and (wh
 
 # Installation
 
+## From PyPI (end users)
+
     pip install id-validation
-    
+
+## Local Development
+
+```bash
+# Clone the repository
+git clone https://github.com/adieyal/id_validation.git
+cd id_validation
+
+# Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install in editable mode with dev dependencies
+make install
+
+# Or manually:
+pip install -e ".[dev]"
+
+# Run tests to verify
+pytest
+```
+
 # Usage
 
     from id_validation import ValidatorFactory

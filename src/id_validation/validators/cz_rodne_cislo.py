@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import re
-from typing import Any, Tuple
+from typing import Any
 
 from ..registry import register
 from ..validate import ValidationError
@@ -12,7 +12,7 @@ from .base import BaseValidator, ParsedID
 _RC_RE = re.compile(r"^(\d{9,10})$")
 
 
-def _decode_rc_date(yy: int, mm_raw: int, dd: int, *, year: int) -> tuple[_dt.date, str | None, dict[str, Any]]:
+def _decode_rc_date(mm_raw: int, dd: int, *, year: int) -> tuple[_dt.date, str, dict[str, Any]]:
     """Decode rodné číslo date and gender.
 
     Month encodings (common rules):
@@ -20,9 +20,9 @@ def _decode_rc_date(yy: int, mm_raw: int, dd: int, *, year: int) -> tuple[_dt.da
     - +20 => special series (often foreigners / special allocations)
     - +70 => female (+50) plus special series (+20)
     """
-    gender: str | None = None
     mm = mm_raw
     special_series = False
+    gender = "M"
 
     if mm >= 70:
         mm -= 70
@@ -91,7 +91,7 @@ class CzechRodneCisloValidator(BaseValidator):
             # 9-digit numbers were issued historically (pre-1954); treat as 1900s.
             century = 1900
             year = century + yy
-            dob, gender, extra = _decode_rc_date(yy, mm_raw, dd, year=year)
+            dob, gender, extra = _decode_rc_date(mm_raw, dd, year=year)
             extra.update({"century": century, "checksum": None})
             return ParsedID(country_code="CZ", id_number=v, id_type="RODNE_CISLO", dob=dob, gender=gender, extra=extra)
 
@@ -103,7 +103,7 @@ class CzechRodneCisloValidator(BaseValidator):
 
         century = _infer_century(yy)
         year = century + yy
-        dob, gender, extra = _decode_rc_date(yy, mm_raw, dd, year=year)
+        dob, gender, extra = _decode_rc_date(mm_raw, dd, year=year)
 
         extra.update(
             {
