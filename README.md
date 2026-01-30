@@ -55,6 +55,11 @@ The following codes are available:
     PT - Portugal (NIF)
     SI - Slovenia (EMŠO)
 
+    AR - Argentina (CUIT/CUIL)
+    CA - Canada (SIN)
+    CO - Colombia (NIT)
+    EC - Ecuador (cédula)
+
 ## Supported countries & extracted fields
 
 | Code | Country / ID | Extracted fields (when valid) |
@@ -88,6 +93,10 @@ The following codes are available:
 | NL | Netherlands (BSN) | *(none)* |
 | PT | Portugal (NIF) | `checksum` |
 | SI | Slovenia (EMŠO) | `dob`, `gender`, `region_code`, `serial`, `checksum` |
+| AR | Argentina (CUIT/CUIL) | `prefix`, `dni`, `category`, `checksum` |
+| CA | Canada (SIN) | *(none)* |
+| CO | Colombia (NIT) | `base`, `dv`, `checksum` |
+| EC | Ecuador (cédula) | `province_code`, `province_name`, `third_digit`, `serial`, `checksum` |
 
 ## References
 See `docs/references/*.md` for per-country reference links and implementation notes.

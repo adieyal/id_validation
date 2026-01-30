@@ -35,6 +35,11 @@ from .validators.hr_oib import CroatiaOIBValidator
 from .validators.br_cpf import BrazilCPFValidator
 from .validators.cl_rut import ChileRUTValidator
 
+from .validators.ca_sin import CanadaSINValidator
+from .validators.ar_cuit_cuil import ArgentinaCUITCUILValidator
+from .validators.co_nit import ColombiaNITValidator
+from .validators.ec_cedula import EcuadorCedulaValidator
+
 VERSION = "0.6.0"
 
 __all__ = ["ValidatorFactory", "VALIDATORS"]
