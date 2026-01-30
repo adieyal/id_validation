@@ -1,6 +1,6 @@
 A library for validating national id numbers and extracting any embedded data from them.
 
-Currenty only South Africa and Zimbabwe are implemented but more countries will be added over time
+Supports multiple countries; each validator can validate format/checksum and (where applicable) extract embedded data (DOB, gender, region codes, etc.).
 
 # Installation
 
@@ -28,6 +28,17 @@ The following codes are available:
     ZA - South Africa
     ZA_OLD - South African (Apartheid-era). See the note below for more information
     ZW - Zimbabwe
+
+    BE - Belgium (NRN)
+    FI - Finland (HETU)
+    FR - France (NIR / Numéro de sécurité sociale)
+    IT - Italy (Codice Fiscale)
+    NO - Norway (Fødselsnummer)
+    ES - Spain (DNI/NIE)
+    SE - Sweden (Personnummer)
+
+## References
+See `docs/references/*.md` for per-country reference links and implementation notes.
 
 
 ## Botswana (BW)
