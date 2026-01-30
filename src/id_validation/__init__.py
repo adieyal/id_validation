@@ -15,6 +15,18 @@ from .validate_france import FranceNIRValidator
 from .validate_italy import ItalyCodiceFiscaleValidator
 from .validate_spain import SpainDNINIEValidator
 
+# Additional international validators (src/id_validation/validators/*)
+from .validators.pl_pesel import PolandPESELValidator
+from .validators.ro_cnp import RomaniaCNPValidator
+from .validators.bg_egn import BulgariaEGNValidator
+from .validators.ee_isikukood import EstoniaIsikukoodValidator
+from .validators.tr_tckn import TurkeyTCKNValidator
+from .validators.lt_asmenskodas import LithuaniaAsmensKodasValidator
+from .validators.lv_personas_kods import LatviaPersonasKodsValidator
+from .validators.cz_rodne_cislo import CzechRodneCisloValidator
+from .validators.sk_rodne_cislo import SlovakiaRodneCisloValidator
+from .validators.dk_cpr import DenmarkCPRValidator
+
 VERSION = "0.6.0"
 
 __all__ = ["ValidatorFactory", "VALIDATORS"]

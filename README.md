@@ -30,12 +30,49 @@ The following codes are available:
     ZW - Zimbabwe
 
     BE - Belgium (NRN)
+    BG - Bulgaria (EGN)
+    CZ - Czech Republic (rodné číslo)
+    DK - Denmark (CPR)
+    EE - Estonia (isikukood)
     FI - Finland (HETU)
     FR - France (NIR / Numéro de sécurité sociale)
     IT - Italy (Codice Fiscale)
+    LT - Lithuania (Asmens kodas)
+    LV - Latvia (personas kods)
     NO - Norway (Fødselsnummer)
+    PL - Poland (PESEL)
+    RO - Romania (CNP)
+    SK - Slovakia (rodné číslo)
     ES - Spain (DNI/NIE)
     SE - Sweden (Personnummer)
+    TR - Turkey (T.C. Kimlik No)
+
+## Supported countries & extracted fields
+
+| Code | Country / ID | Extracted fields (when valid) |
+|---|---|---|
+| BW | Botswana | `gender` |
+| NG | Nigeria | *(none – format only)* |
+| ZA | South Africa (post-apartheid) | `dob`, `gender`, `checksum`, `citizenship` |
+| ZA_OLD | South Africa (apartheid-era) | `dob`, `gender`, `checksum`, `citizenship`, `race` |
+| ZW | Zimbabwe | `registration_region`, `district`, `sequence_number` |
+| BE | Belgium (NRN) | `dob`, `gender`, `sequence`, `checksum` |
+| BG | Bulgaria (EGN) | `dob`, `gender`, `birth_order`, `checksum` |
+| CZ | Czech Republic (rodné číslo) | `dob`, `gender`, `century`, `month_raw`, `special_series`, `extension`, `checksum` |
+| DK | Denmark (CPR) | `dob`, `gender`, `century`, `sequence`, `checksum_valid` *(lenient by default)* |
+| EE | Estonia (isikukood) | `dob`, `gender`, `serial`, `checksum` |
+| FI | Finland (HETU) | `dob`, `gender`, `century`, `individual_number`, `checksum` |
+| FR | France (NIR) | `dob` *(month-level; day not encoded)*, `gender`, `department`, `commune`, `order`, `key`, `year`, `month` |
+| IT | Italy (Codice Fiscale) | `dob`, `gender`, `municipality_code`, `checksum` |
+| LT | Lithuania (Asmens kodas) | `dob`, `gender`, `century`, `serial`, `checksum` |
+| LV | Latvia (personas kods) | `dob` *(legacy only)*, `century`, `century_digit`, `serial` *(legacy only)* |
+| NO | Norway (fødselsnummer) | `dob`, `gender`, `individual_number`, `control_digits` |
+| PL | Poland (PESEL) | `dob`, `gender`, `serial`, `checksum` |
+| RO | Romania (CNP) | `dob`, `gender`, `county_code`, `county_name` *(best-effort)*, `serial`, `checksum` |
+| SK | Slovakia (rodné číslo) | `dob`, `gender`, `century`, `month_raw`, `special_series`, `extension`, `checksum` |
+| ES | Spain (DNI/NIE) | `type` (DNI/NIE), plus `number`, `letter` (and `prefix` for NIE) |
+| SE | Sweden (personnummer) | `dob`, `gender`, `coordination_number`, `individual_number`, `checksum` |
+| TR | Turkey (TCKN) | `checksum10`, `checksum11` *(no DOB/gender encoded)* |
 
 ## References
 See `docs/references/*.md` for per-country reference links and implementation notes.
