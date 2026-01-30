@@ -18,7 +18,7 @@ keywords = ["id numbers", "validation"]
 requires-python = ">=3.9"
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "build", "twine"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
